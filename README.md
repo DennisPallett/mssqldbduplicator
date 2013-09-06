@@ -1,4 +1,4 @@
-#Duplicator MS SQL Database
+# MS SQL Database Duplicator 
 A tool to make a duplicate copy of a Microsoft SQL Server database within the same server.
 
 ### How to build and run.

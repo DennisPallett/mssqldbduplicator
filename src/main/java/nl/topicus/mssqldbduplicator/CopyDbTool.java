@@ -8,6 +8,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Properties;
 
 import org.apache.commons.cli.BasicParser;
@@ -59,6 +62,10 @@ public class CopyDbTool {
 	
 	protected String logName;
 	
+	private String port;
+	
+	private boolean backupOnly;
+	
 	public CopyDbTool () {
 		options = new Options();
 		
@@ -93,7 +100,7 @@ public class CopyDbTool {
 		options.addOption(OptionBuilder.create("i"));
 		
 		OptionBuilder.hasArg(true);
-		OptionBuilder.isRequired(true);
+		OptionBuilder.isRequired(false);
 		OptionBuilder.withLongOpt("name");
 		OptionBuilder.withDescription("Specify the name of the new copy");
 		options.addOption(OptionBuilder.create("n"));
@@ -104,11 +111,24 @@ public class CopyDbTool {
 		OptionBuilder.withDescription("Specify the hostname or IP address of the SQL server");
 		options.addOption(OptionBuilder.create("s"));
 		
+		OptionBuilder.hasArg(true);
+		OptionBuilder.isRequired(false);
+		OptionBuilder.withLongOpt("port");
+		OptionBuilder.withDescription("Specify the port on which sqlserver is listening (default: 1433)");
+		options.addOption(OptionBuilder.create());
+		
 		OptionBuilder.hasArg(false);
 		OptionBuilder.isRequired(false);
 		OptionBuilder.withLongOpt("overwrite");
 		OptionBuilder.withDescription("Flag to indicate whether or not to overwrite an existing database");
 		options.addOption(OptionBuilder.create());
+		
+		OptionBuilder.hasArg(false);
+		OptionBuilder.isRequired(false);
+		OptionBuilder.withLongOpt("backuponly");
+		OptionBuilder.withDescription("Flag to indicate if a database should only be backed up");
+		options.addOption(OptionBuilder.create());
+
 	}
 	
 	public String quoteIdentifier (String name) {
@@ -159,14 +179,16 @@ public class CopyDbTool {
 		// create backup
 		createBackup();
 		
-		// get file info from backup
-		findFileInfo();		
-		
-		// create copy database
-		createCopy();
-		
-		// delete backup
-		deleteBackup();
+		if (!backupOnly) {
+			// get file info from backup
+			findFileInfo();		
+			
+			// create copy database
+			createCopy();
+			
+			// delete backup
+			deleteBackup();
+		}
 		
 		closeConnection();
 		
@@ -231,7 +253,14 @@ public class CopyDbTool {
 	protected void createBackup () throws SQLException {
 		log.info("Creating backup of database " + quoteIdentifier(database) + "...");
 		
-		backupFileName = sanitizeFilename("backup-" + database + "-" + name + ".bak");
+		if (!backupOnly) {
+			backupFileName = sanitizeFilename("backup-" + database + "-" + name + ".bak");
+		} else {
+			DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+			Calendar cal = Calendar.getInstance();
+			backupFileName = sanitizeFilename(dateFormat.format(cal.getTime()) + database + ".bak");
+		}
+		
 		backupFilePath = backupDirectory + backupFileName;
 		
 		PreparedStatement q = conn.prepareStatement("BACKUP DATABASE " + quoteIdentifier(database) + " TO DISK = N" + quoteValue(backupFilePath));
@@ -306,11 +335,11 @@ public class CopyDbTool {
 			connProps.setProperty("password", password);
 		}
 		
-		if(instance != null){
+		if (instance != null){
 			connProps.setProperty("instance", instance);
 		}
 		
-		String url = "jdbc:jtds:sqlserver://" + server + "/master";
+		String url = "jdbc:jtds:sqlserver://" + server + ":" + port +"/master";
 		log.debug("Using connection URL for MS SQL Server: " + url);
 		
 
@@ -357,6 +386,12 @@ public class CopyDbTool {
 		server = cmd.getOptionValue("server");
 		log.info("SQL server: " + server);
 		
+		port = cmd.getOptionValue("port");
+		if (StringUtils.isEmpty(port)) {
+			port = "1433";
+		}
+		log.info("Port: " + port);
+		
 		log.info("User: " + user);
 		
 		instance = cmd.getOptionValue("instance");
@@ -373,7 +408,12 @@ public class CopyDbTool {
 		overwrite = (cmd.hasOption("overwrite"));
 		if (overwrite) {
 			log.info("Overwrite enabled");
-		}		
+		}
+		
+		backupOnly = (cmd.hasOption("backuponly"));
+		if (backupOnly) {
+			log.info("backup only");
+		}
 	}
 
 	/**

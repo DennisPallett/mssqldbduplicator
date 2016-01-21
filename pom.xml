@@ -4,7 +4,7 @@
 	<groupId>nl.topicus.mssqldbduplicator</groupId>
 	<artifactId>mssqlduplicator</artifactId>
 	<packaging>jar</packaging>
-	<version>0.1</version>
+	<version>0.2</version>
 	<name>MSSQL-DB-Duplicator</name>
 	<url>https://github.com/topicus-ini/mssqldbduplicator</url>
 

@@ -9,7 +9,7 @@ VOLUME ["/logs"]
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
 # Add MSSQLDBDuplicator jar file
-ENV TOOL_VERSION 0.1
+ENV TOOL_VERSION 0.2
 ADD https://github.com/topicus-ini/mssqldbduplicator/releases/download/$TOOL_VERSION/mssqlduplicator-$TOOL_VERSION-jar-with-dependencies.jar /mssqlduplicator-$TOOL_VERSION.jar
 
 # Copy logging config file

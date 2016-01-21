@@ -198,7 +198,7 @@ public class CopyDbTool {
 	protected void deleteBackup () throws SQLException {
 		log.info("Deleting backup...");
 		
-		PreparedStatement q = conn.prepareStatement("EXECUTE xp_delete_file 0, " + quoteValue(backupDirectory) + ", " + quoteValue(backupFileName));
+		PreparedStatement q = conn.prepareStatement("EXECUTE xp_delete_file 0, " + quoteValue(backupDirectory + backupFileName));
 		q.execute();
 		
 		q.close();
@@ -339,7 +339,7 @@ public class CopyDbTool {
 			connProps.setProperty("instance", instance);
 		}
 		
-		String url = "jdbc:jtds:sqlserver://" + server + ":" + port +"/master";
+		String url = "jdbc:jtds:sqlserver://" + server + ":" + port + "/" + database;
 		log.debug("Using connection URL for MS SQL Server: " + url);
 		
 
